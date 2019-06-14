@@ -13,12 +13,8 @@ In 2017, when I was working at Axon Active Vietnam, there was a need to run Unit
 
 ##### pom.xml
 
-##### System Properties
-* ivy.test.application
-* ivy.test.host
-* ivy.test.port
-
 ##### Running from Ivy Designer
+* Right click on test case and Run as Unit Test
 
 ##### Running by Maven
 
