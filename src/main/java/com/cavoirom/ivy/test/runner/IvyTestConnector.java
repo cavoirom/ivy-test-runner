@@ -32,7 +32,7 @@ public class IvyTestConnector {
   public TestResult sendTestRequest(Class<?> testClass) throws IOException, InitializationError {
     String hostname = "localhost";
     String port = "8081";
-    String application = "designer";
+    String application = isDesigner() ? "designer" : "Portal";
     String moduleName = parseModuleName(testClass);
     // Connect to Test Server start url
     String testServerUrl = buildTestServerUrl(hostname, port, application, testClass, moduleName);
@@ -61,6 +61,7 @@ public class IvyTestConnector {
     Matcher matcher = TEST_RESULT_JSON_PATTERN.matcher(response);
     if (matcher.find()) {
       String json = StringEscapeUtils.unescapeHtml4(matcher.group(1)).trim();
+      System.out.println("[INFO] Result: " + json);
       return TestResult.fromJson(json);
     } else {
       throw new InitializationError("Could not parse test result return from server: " + response);
@@ -101,5 +102,15 @@ public class IvyTestConnector {
       return javaProjectMatcher.group(1);
     }
     return StringUtils.EMPTY;
+  }
+
+  private boolean isDesigner() {
+    try {
+      // This class only exists on Ivy Designer (from version 7)
+      Class.forName("com.ulcjava.container.local.server.LocalContainerAdapter");
+      return true;
+    } catch (ClassNotFoundException ex) {
+      return false;
+    }
   }
 }

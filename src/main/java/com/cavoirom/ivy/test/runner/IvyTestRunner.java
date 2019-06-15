@@ -2,7 +2,6 @@ package com.cavoirom.ivy.test.runner;
 
 import ch.ivyteam.ivy.environment.EnvironmentNotAvailableException;
 import ch.ivyteam.ivy.environment.Ivy;
-import java.io.IOException;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Ignore;
@@ -32,7 +31,7 @@ public class IvyTestRunner extends Runner implements Filterable, Sortable {
     if (!isIvyEnvironment()) {
       try {
         testResult = IvyTestConnector.newInstance().sendTestRequest(testClass);
-      } catch (IOException ex) {
+      } catch (Exception ex) {
         throw new InitializationError(ex);
       }
     }
@@ -141,7 +140,8 @@ public class IvyTestRunner extends Runner implements Filterable, Sortable {
                               notifier.fireTestStarted(child);
                               notifier.fireTestFailure(
                                   new Failure(
-                                      child, new Throwable("The test case could not be run on server.")));
+                                      child,
+                                      new Throwable("The test case could not be run on server.")));
                               notifier.fireTestFinished(
                                   Description.createTestDescription(
                                       testClass, child.getMethodName()));
