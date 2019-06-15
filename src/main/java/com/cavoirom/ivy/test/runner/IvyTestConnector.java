@@ -1,6 +1,7 @@
 package com.cavoirom.ivy.test.runner;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -9,7 +10,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.junit.runners.model.InitializationError;
 
 public class IvyTestConnector {
@@ -17,9 +20,6 @@ public class IvyTestConnector {
       "http://{host}:{port}/ivy/pro/{application}"
           + "/ivy-test-server/16B53B3E6F6E3E12/start.ivp?testClassPath={testClassPath}&moduleName={moduleName}";
   private static final String TEST_EXECUTOR_PAGE_URL = "http://{host}:{port}{path}";
-  private static final Pattern MAVEN_PROJECT_PATH_PATTERN =
-      Pattern.compile(".*/(.*)/target/test-classes/");
-  private static final Pattern JAVA_PROJECT_PATH_PATTERN = Pattern.compile(".*/(.*)/classes/");
   private static final Pattern TEST_RESULT_JSON_PATTERN =
       Pattern.compile("<body>(.*)</body>", Pattern.DOTALL);
 
@@ -29,7 +29,8 @@ public class IvyTestConnector {
     return new IvyTestConnector();
   }
 
-  public TestResult sendTestRequest(Class<?> testClass) throws IOException, InitializationError {
+  public TestResult sendTestRequest(Class<?> testClass)
+      throws IOException, InitializationError, XmlPullParserException {
     String hostname = "localhost";
     String port = "8081";
     String application = isDesigner() ? "designer" : "Portal";
@@ -90,18 +91,10 @@ public class IvyTestConnector {
     return rawCookie.substring(0, rawCookie.indexOf(";"));
   }
 
-  private String parseModuleName(Class<?> testClass) {
-    String classPath = testClass.getClassLoader().getResource(".").getPath();
-
-    Matcher mavenProjectMatcher = MAVEN_PROJECT_PATH_PATTERN.matcher(classPath);
-    Matcher javaProjectMatcher = JAVA_PROJECT_PATH_PATTERN.matcher(classPath);
-
-    if (mavenProjectMatcher.find()) {
-      return mavenProjectMatcher.group(1);
-    } else if (javaProjectMatcher.find()) {
-      return javaProjectMatcher.group(1);
-    }
-    return StringUtils.EMPTY;
+  private String parseModuleName(Class<?> testClass) throws IOException, XmlPullParserException {
+    MavenXpp3Reader reader = new MavenXpp3Reader();
+    Model model = reader.read(new FileReader(getProjectDirectory() + "/pom.xml"));
+    return model.getArtifactId();
   }
 
   private boolean isDesigner() {
@@ -112,5 +105,9 @@ public class IvyTestConnector {
     } catch (ClassNotFoundException ex) {
       return false;
     }
+  }
+
+  private String getProjectDirectory() {
+    return System.getProperty("user.dir");
   }
 }
